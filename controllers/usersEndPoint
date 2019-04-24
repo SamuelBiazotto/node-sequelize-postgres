@@ -1,0 +1,104 @@
+const promise = require('bluebird');
+const dotenv = require('dotenv');
+const Profile = require('../app/models').Profile;
+const UserCtrl = require('./userController');
+
+dotenv.config();
+
+const options = {
+    promiseLib: promise
+};
+
+const postgres = require('pg-promise')(options);
+const db = postgres(process.env.DATABASE_URL);
+
+
+module.exports = {
+    gettAllUsers: getAllUsers,
+    getSingleUser: getSingleUser,
+    createUser: createUser,
+    updateUser: updateUser,
+    deleteUser: deleteUser,
+};
+
+async function getAllUsers(req, res, next) {
+    // const response = await db.any("SELECT * FROM users");
+    // return res.status(200).json({
+    //     status: 'success',
+    //     data: response,
+    //     message: 'retrievied all users'
+    // })
+    await UserCtrl.getAllUsers().then(users => {
+        res.status(200).json({
+            status: 'success',
+            data: users,
+            message: 'retrievied all users'
+        })
+    }).catch(error => {
+        res.status(400).json({
+            status: "Error",
+            data: error,
+            message: 'something went wrong getting all users =('
+        })
+    })
+}
+
+async function getSingleUser(req, res, next) {
+    await UserCtrl.findOneUser(req.params.id).then( user =>{
+        res.status(200).json({
+            status: 'success',
+            data: user,
+            message: 'user retrivied'
+        })
+    }).catch(error => {
+        res.status(400).json({
+            status: 'error',
+            data: error,
+            message: 'something went wrong retrieving one user  =('
+        })
+    })
+}
+
+async function createUser(req, res, next) {
+    try {
+        await Profile.create(req.body.profile)
+            .then( profile => {
+                req.body.profile_id = profile.get('id');
+                UserCtrl.createUser(req.body).then( user => {
+                    console.log('user ', user);
+                    res.status(200).json({
+                        status: 200,
+                        data:user,
+                        message:'User created'
+                    })
+                }).catch(error => {
+                    res.status(400).json({
+                        status: 'error',
+                        data: error,
+                        message: 'something went wrong by creating user =('
+                    })
+                })
+            })
+            .catch(error => {
+                res.status(400).json({
+                    status: 'error',
+                    data: error,
+                    message: 'something went wrong by creating profile =('
+                })
+            })
+            .finally();
+    }catch (e) {
+        console.log(e);
+    }
+}
+
+
+
+
+async function updateUser() {
+
+}
+
+async function deleteUser() {
+
+}
